@@ -48,9 +48,9 @@ export GPU_COUNT="1"
 # Keep requests realistic — the cluster bans namespaces with over-requested
 # but under-used resources. Start small, scale up if monitoring shows you need it.
 export CPU_REQUEST="4"
-export CPU_LIMIT="8"
-export MEM_REQUEST="32Gi"
-export MEM_LIMIT="64Gi"
+export CPU_LIMIT="8"   
+export MEM_REQUEST="16Gi"
+export MEM_LIMIT="32Gi"   
 
 # -------- Container image --------
 # The base image. Has CUDA + Python + PyTorch + Jupyter preinstalled.
