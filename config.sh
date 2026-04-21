@@ -7,11 +7,11 @@
 # -------- Identity --------
 # Your username. Used as a prefix for pod/job/PVC names.
 # Lowercase letters, numbers, and dashes only. No spaces, no underscores.
-export NRP_USER="yourname"
+export NRP_USER="seemandhar"
 
 # The Kubernetes namespace your advisor/admin added you to.
 # Check by visiting https://nrp.ai → User → Namespaces.
-export NAMESPACE="mc-lab"
+export NAMESPACE="mc-lab-render"
 
 # -------- Persistent storage (PVC) --------
 # Name of your personal PVC. Default: "${NRP_USER}-data".
@@ -48,7 +48,7 @@ export GPU_COUNT="1"
 # Keep requests realistic — the cluster bans namespaces with over-requested
 # but under-used resources. Start small, scale up if monitoring shows you need it.
 export CPU_REQUEST="4"
-export CPU_LIMIT="8"   
+export CPU_LIMIT="8"  
 export MEM_REQUEST="16Gi"
 export MEM_LIMIT="32Gi"   
 
