@@ -1,0 +1,59 @@
+# ============================================================================
+# Interactive VSCode/dev pod — standalone YAML for reference or manual editing.
+# Normally you don't need to touch this; `./nrp.sh up` generates it from config.sh.
+#
+# Variables marked ${VAR} are substituted by nrp.sh. If you apply this file
+# directly with kubectl, replace them manually or use `envsubst`:
+#
+#   source ./config.sh
+#   envsubst < vscode-pod.yaml | kubectl apply -f -
+# ============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${POD_NAME}
+  namespace: ${NAMESPACE}
+  labels:
+    app: ${POD_NAME}
+    owner: ${NRP_USER}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: dev
+    image: ${IMAGE}
+    # sleep infinity keeps the container alive so you can attach VSCode / exec in.
+    # Do NOT use this command in a Job — it will get your account banned.
+    command: ["sleep", "infinity"]
+    resources:
+      requests:
+        cpu: "${CPU_REQUEST}"
+        memory: "${MEM_REQUEST}"
+        nvidia.com/gpu: "${GPU_COUNT}"
+      limits:
+        cpu: "${CPU_LIMIT}"
+        memory: "${MEM_LIMIT}"
+        nvidia.com/gpu: "${GPU_COUNT}"
+    volumeMounts:
+    - name: workspace
+      mountPath: ${WORKSPACE_MOUNT}
+    - name: dshm
+      mountPath: /dev/shm
+  volumes:
+  - name: workspace
+    persistentVolumeClaim:
+      claimName: ${PVC_NAME}
+  - name: dshm
+    emptyDir:
+      medium: Memory
+      sizeLimit: ${SHM_SIZE}
+  # Pin to a specific GPU flavor. Remove this whole `affinity:` block to
+  # accept any available GPU (will schedule faster, but GPU type is random).
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: nvidia.com/gpu.product
+            operator: In
+            values:
+            - ${GPU_TYPE}

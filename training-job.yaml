@@ -1,0 +1,79 @@
+# ============================================================================
+# Training Job template — for runs longer than 6 hours.
+#
+# Edit the `command:` below to your training script. Then submit with:
+#
+#   ./nrp.sh train-submit training-job.yaml
+#
+# Unlike interactive pods, Jobs have no time limit as long as they're
+# making progress. The Job auto-cleans when the command exits.
+#
+# ⚠ NEVER use `sleep` or any command that doesn't terminate naturally.
+#   Nautilus bans accounts that do this. Your command must actually finish.
+# ============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # CHANGE this per run so multiple jobs can coexist (e.g., nerfify-run-01).
+  name: ${NRP_USER}-training
+  namespace: ${NAMESPACE}
+  labels:
+    owner: ${NRP_USER}
+spec:
+  # Don't auto-retry failed jobs by default — debug failures yourself.
+  backoffLimit: 0
+  # Clean the Job object 1 hour after it finishes.
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: train
+        image: ${IMAGE}
+        # ↓↓↓ CHANGE ME: your actual training command ↓↓↓
+        command:
+        - bash
+        - -lc
+        - |
+          set -euo pipefail
+          cd /workspace
+          echo "GPU info:"
+          nvidia-smi -L
+          echo "Starting training at $(date)"
+          # Replace the next line with your real script. Examples:
+          #   python train.py --config configs/nerfify.yaml
+          #   accelerate launch train.py --batch-size 32
+          #   torchrun --nproc_per_node=${GPU_COUNT} train.py
+          python -c "import torch; print('CUDA:', torch.cuda.is_available()); print('Device:', torch.cuda.get_device_name(0))"
+          echo "Done at $(date)"
+        resources:
+          requests:
+            cpu: "${CPU_REQUEST}"
+            memory: "${MEM_REQUEST}"
+            nvidia.com/gpu: "${GPU_COUNT}"
+          limits:
+            cpu: "${CPU_LIMIT}"
+            memory: "${MEM_LIMIT}"
+            nvidia.com/gpu: "${GPU_COUNT}"
+        volumeMounts:
+        - name: workspace
+          mountPath: ${WORKSPACE_MOUNT}
+        - name: dshm
+          mountPath: /dev/shm
+      volumes:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: ${PVC_NAME}
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: ${SHM_SIZE}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - ${GPU_TYPE}
